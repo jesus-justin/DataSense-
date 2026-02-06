@@ -62,6 +62,23 @@
       overflow-x: hidden;
       position: relative;
     }
+
+    .skip-link {
+      position: absolute;
+      top: -40px;
+      left: 16px;
+      background: var(--dark);
+      color: var(--light);
+      padding: 10px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      z-index: 1001;
+      transition: top 0.2s ease;
+    }
+
+    .skip-link:focus {
+      top: 16px;
+    }
     
     #particles-canvas {
       position: fixed;
@@ -535,6 +552,7 @@
   </style>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
   <canvas id="particles-canvas"></canvas>
   <header>
     <h1>DataSense</h1>
@@ -545,7 +563,7 @@
     <a class="cta" href="http://localhost:8501" target="_blank" rel="noopener">Open ML App</a>
   </header>
 
-  <main>
+  <main id="main-content">
     <section id="features" class="glass reveal">
       <h2 class="section-title">What DataSense Can Do</h2>
       <p class="section-subtitle">An end-to-end ML analytics playground designed for learning and real-world use.</p>
