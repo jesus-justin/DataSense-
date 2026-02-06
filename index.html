@@ -542,6 +542,19 @@
       height: 2px;
       background: linear-gradient(90deg, transparent, var(--primary), transparent);
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+
+      html {
+        scroll-behavior: auto;
+      }
+    }
     
     @media (max-width: 640px) {
       header {
