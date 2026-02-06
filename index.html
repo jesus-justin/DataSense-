@@ -211,6 +211,27 @@
     .cta:hover::after {
       transform: translateX(5px);
     }
+
+    .hero-badges {
+      margin-top: 24px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-badge {
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+      font-size: 0.9rem;
+      backdrop-filter: blur(6px);
+      letter-spacing: 0.2px;
+    }
     
     main {
       padding: 48px 24px 72px;
@@ -580,6 +601,11 @@
       train models, and visualize insights in minutes.
     </p>
     <a class="cta" href="http://localhost:8501" target="_blank" rel="noopener">Open ML App</a>
+    <div class="hero-badges">
+      <span class="hero-badge">Supervised & Unsupervised</span>
+      <span class="hero-badge">Regression & Classification</span>
+      <span class="hero-badge">Clustering & PCA</span>
+    </div>
   </header>
 
   <main id="main-content">
