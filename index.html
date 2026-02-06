@@ -834,6 +834,13 @@
       resizeCanvas();
       initParticles();
     });
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const resizeObserver = new ResizeObserver(() => {
+        resizeCanvas();
+      });
+      resizeObserver.observe(document.body);
+    }
     
     // Particle class
     class Particle {
