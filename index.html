@@ -811,10 +811,17 @@
       }, 100);
     
     // Particle System
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const canvas = document.getElementById('particles-canvas');
     const ctx = canvas.getContext('2d');
     let particles = [];
     let particleCount = 80;
+    let animationFrameId = null;
+    let particlesEnabled = !prefersReducedMotion;
+
+    if (prefersReducedMotion) {
+      canvas.style.display = 'none';
+    }
     
     // Resize canvas
     function resizeCanvas() {
@@ -887,6 +894,7 @@
     
     // Animation loop
     function animateParticles() {
+      if (!particlesEnabled) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       particles.forEach(particle => {
@@ -895,12 +903,27 @@
       });
       
       connectParticles();
-      requestAnimationFrame(animateParticles);
+      animationFrameId = requestAnimationFrame(animateParticles);
     }
     
     // Start animation
     initParticles();
     animateParticles();
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        particlesEnabled = false;
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+          animationFrameId = null;
+        }
+      } else if (!prefersReducedMotion) {
+        particlesEnabled = true;
+        if (!animationFrameId) {
+          animateParticles();
+        }
+      }
+    });
     });
   </script>
 </body>
