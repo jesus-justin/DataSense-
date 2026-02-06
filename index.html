@@ -546,6 +546,29 @@
     .highlight .chip:hover::before {
       left: 100%;
     }
+
+    .copy-link {
+      margin-left: 10px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(76, 139, 245, 0.3);
+      background: #ffffff;
+      color: var(--primary-dark);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .copy-link:hover {
+      background: var(--secondary);
+    }
+
+    .copy-link.success {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
     
     .reveal {
       opacity: 0;
@@ -736,6 +759,7 @@
         </ol>
         <p>
           Then open the app here: <a href="http://localhost:8501" target="_blank" rel="noopener" style="color: var(--primary); font-weight: 600;">http://localhost:8501</a>
+          <button id="copyLink" class="copy-link" type="button">Copy</button>
         </p>
       </div>
     </section>
@@ -789,6 +813,27 @@
     backToTop.addEventListener("click", () => {
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
+
+    // Copy local app link
+    const copyButton = document.getElementById("copyLink");
+    if (copyButton) {
+      copyButton.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText("http://localhost:8501");
+          copyButton.classList.add("success");
+          copyButton.textContent = "Copied";
+          setTimeout(() => {
+            copyButton.classList.remove("success");
+            copyButton.textContent = "Copy";
+          }, 1500);
+        } catch (error) {
+          copyButton.textContent = "Copy failed";
+          setTimeout(() => {
+            copyButton.textContent = "Copy";
+          }, 1500);
+        }
+      });
+    }
     
     // Card mouse tracking effect
     const cards = document.querySelectorAll('.card');
