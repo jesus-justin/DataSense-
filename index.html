@@ -778,10 +778,16 @@
   <button id="backToTop" aria-label="Back to top">↑</button>
 
   <footer>
-    Built with Python, Streamlit, and Scikit-learn · DataSense
+    Built with Python, Streamlit, and Scikit-learn · DataSense © <span id="year"></span>
   </footer>
 
   <script>
+    // Footer year
+    const yearSpan = document.getElementById("year");
+    if (yearSpan) {
+      yearSpan.textContent = new Date().getFullYear();
+    }
+
     // Smooth scroll for anchor links
     document.querySelectorAll('a[href^="#"]').forEach((link) => {
       link.addEventListener("click", (event) => {
