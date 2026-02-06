@@ -53,6 +53,12 @@
       0% { background-position: -1000px 0; }
       100% { background-position: 1000px 0; }
     }
+
+    @keyframes scrollDot {
+      0% { transform: translate(-50%, 0); opacity: 1; }
+      60% { transform: translate(-50%, 10px); opacity: 0.2; }
+      100% { transform: translate(-50%, 0); opacity: 1; }
+    }
     
     body {
       margin: 0;
@@ -253,6 +259,42 @@
       font-size: 0.9rem;
       backdrop-filter: blur(6px);
       letter-spacing: 0.2px;
+    }
+
+    .scroll-indicator {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      z-index: 1;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    .scroll-indicator span {
+      width: 20px;
+      height: 30px;
+      border: 2px solid rgba(255, 255, 255, 0.7);
+      border-radius: 999px;
+      position: relative;
+    }
+
+    .scroll-indicator span::after {
+      content: "";
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      width: 4px;
+      height: 4px;
+      background: #ffffff;
+      border-radius: 50%;
+      animation: scrollDot 1.8s infinite;
     }
     
     main {
@@ -630,6 +672,10 @@
       <span class="hero-badge">Supervised & Unsupervised</span>
       <span class="hero-badge">Regression & Classification</span>
       <span class="hero-badge">Clustering & PCA</span>
+    </div>
+    <div class="scroll-indicator" aria-hidden="true">
+      <span></span>
+      Scroll
     </div>
   </header>
 
