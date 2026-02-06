@@ -160,7 +160,7 @@
     }
     
     .cta {
-      margin-top: 32px;
+      margin-top: 0;
       display: inline-flex;
       align-items: center;
       gap: 12px;
@@ -210,6 +210,28 @@
     
     .cta:hover::after {
       transform: translateX(5px);
+    }
+
+    .cta-group {
+      margin-top: 32px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta.secondary {
+      background: rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      color: #ffffff;
+      box-shadow: none;
+    }
+
+    .cta.secondary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.2);
     }
 
     .hero-badges {
@@ -600,7 +622,10 @@
       Beginner-friendly Machine Learning analytics. Upload a CSV, detect learning type,
       train models, and visualize insights in minutes.
     </p>
-    <a class="cta" href="http://localhost:8501" target="_blank" rel="noopener">Open ML App</a>
+    <div class="cta-group">
+      <a class="cta" href="http://localhost:8501" target="_blank" rel="noopener">Open ML App</a>
+      <a class="cta secondary" href="#features">View Features</a>
+    </div>
     <div class="hero-badges">
       <span class="hero-badge">Supervised & Unsupervised</span>
       <span class="hero-badge">Regression & Classification</span>
