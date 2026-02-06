@@ -816,6 +816,7 @@
     const ctx = canvas.getContext('2d');
     let particles = [];
     let particleCount = 80;
+    let connectionDistance = 120;
     let animationFrameId = null;
     let particlesEnabled = !prefersReducedMotion;
 
@@ -866,7 +867,8 @@
     // Initialize particles
     function initParticles() {
       particles = [];
-      particleCount = Math.min(80, Math.floor(canvas.width / 15));
+      particleCount = Math.min(100, Math.max(40, Math.floor(window.innerWidth / 12)));
+      connectionDistance = Math.min(140, Math.max(90, Math.floor(window.innerWidth / 12)));
       for (let i = 0; i < particleCount; i++) {
         particles.push(new Particle());
       }
@@ -880,8 +882,8 @@
           const dy = particles[i].y - particles[j].y;
           const distance = Math.sqrt(dx * dx + dy * dy);
           
-          if (distance < 120) {
-            ctx.strokeStyle = `rgba(76, 139, 245, ${0.15 * (1 - distance / 120)})`;
+          if (distance < connectionDistance) {
+            ctx.strokeStyle = `rgba(76, 139, 245, ${0.15 * (1 - distance / connectionDistance)})`;
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
