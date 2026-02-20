@@ -777,6 +777,33 @@
       height: 2px;
       background: linear-gradient(90deg, transparent, var(--primary), transparent);
     }
+    
+    /* Image optimization and lazy loading */
+    img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+    
+    img[loading="lazy"] {
+      background-color: #f0f0f0;
+    }
+    
+    /* Optimize SVG images */
+    svg {
+      max-width: 100%;
+      height: auto;
+    }
+    
+    /* Picture element responsiveness */
+    picture {
+      display: block;
+    }
+    
+    /* WebP image support with fallback */
+    @supports (content: '') {
+      picture source[type="image/webp"] { }
+    }
 
     @media (prefers-reduced-motion: reduce) {
       *,
