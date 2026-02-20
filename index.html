@@ -803,6 +803,33 @@
       <a class="cta" href="http://localhost:8501" target="_blank" rel="noopener">Open ML App</a>
       <a class="cta secondary" href="#features">View Features</a>
     </div>
+    <!-- Newsletter form with validation -->
+    <form class="newsletter-form" novalidate>
+      <label for="email-input" style="display: block; margin: 20px 0 10px 0; color: var(--dark); font-weight: 600;">
+        Get updates on new features
+      </label>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <input 
+          type="email" 
+          id="email-input" 
+          name="email" 
+          placeholder="Enter your email" 
+          required 
+          autocomplete="email"
+          style="flex: 1; min-width: 200px; padding: 10px 15px; border: 2px solid var(--primary); border-radius: 8px; font-size: 1rem; background: var(--light); color: var(--dark);"
+          aria-label="Email for newsletter"
+          aria-invalid="false"
+        />
+        <button 
+          type="submit" 
+          style="padding: 10px 25px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;"
+          aria-label="Subscribe to newsletter"
+        >
+          Subscribe
+        </button>
+      </div>
+      <div id="form-message" style="margin-top: 10px; display: none;" role="alert"></div>
+    </form>
     <div class="hero-badges">
       <span class="hero-badge">Supervised & Unsupervised</span>
       <span class="hero-badge">Regression & Classification</span>
@@ -1117,6 +1144,35 @@
           .catch(function(error) {
             console.log('Service Worker registration failed:', error);
           });
+      });
+    }
+    
+    // Form validation and submission
+    const form = document.querySelector('.newsletter-form');
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const emailInput = document.getElementById('email-input');
+        const messageDiv = document.getElementById('form-message');
+        
+        if (emailInput.validity.valid) {
+          messageDiv.textContent = '✓ Thank you for subscribing!';
+          messageDiv.style.color = 'var(--accent)';
+          messageDiv.style.display = 'block';
+          emailInput.setAttribute('aria-invalid', 'false');
+          emailInput.value = '';
+          setTimeout(() => messageDiv.style.display = 'none', 3000);
+        } else {
+          messageDiv.textContent = '✗ Please enter a valid email';
+          messageDiv.style.color = '#ef4444';
+          messageDiv.style.display = 'block';
+          emailInput.setAttribute('aria-invalid', 'true');
+        }
+      });
+      
+      document.getElementById('email-input').addEventListener('invalid', function(e) {
+        e.preventDefault();
+        this.setAttribute('aria-invalid', 'true');
       });
     }
   </script>
