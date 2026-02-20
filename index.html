@@ -48,7 +48,23 @@
       --glass: rgba(255, 255, 255, 0.72);
     }
     
-    * {
+    /* Dark mode support */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --primary: #5a9cff;
+        --primary-dark: #3d7ee8;
+        --secondary: #1a1f2e;
+        --dark: #f5f5f5;
+        --light: #0f1b33;
+        --accent: #4ade80;
+        --muted: #a0aab8;
+        --glass: rgba(20, 25, 40, 0.72);
+      }
+      
+      body {
+        background: radial-gradient(circle at top, #0f1b33 0%, #1a1f2e 40%, #141930 100%);
+      }
+    }
       box-sizing: border-box;
       margin: 0;
       padding: 0;
