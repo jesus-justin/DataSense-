@@ -24,6 +24,11 @@
   <meta name="theme-color" content="#4c8bf5" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#5a9cff" media="(prefers-color-scheme: dark)" />
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%234c8bf5' width='180' height='180' rx='40'/><text x='90' y='132' font-size='90' font-weight='bold' fill='white' text-anchor='middle'>D</text></svg>" />
+  <!-- Security headers -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta http-equiv="Permissions-Policy" content="geolocation=(), camera=(), microphone=(), payment=()" />
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -973,6 +978,10 @@
   </footer>
 
   <script>
+    // Content Security Policy: inline scripts are used for performance and design purposes.
+    // For production, consider moving to external files and adding CSP headers.
+    // Recommended CSP: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+    
     // Footer year
     const yearSpan = document.getElementById("year");
     if (yearSpan) {
