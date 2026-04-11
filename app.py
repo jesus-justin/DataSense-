@@ -1,7 +1,6 @@
 import io
-import textwrap
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -9,20 +8,24 @@ import seaborn as sns
 import streamlit as st
 from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
     confusion_matrix,
+    f1_score,
     mean_absolute_error,
     mean_squared_error,
+    precision_score,
     r2_score,
+    recall_score,
+    silhouette_score,
 )
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.cluster import KMeans
 
 
@@ -40,25 +43,46 @@ class DetectionResult:
 
 
 def detect_learning_type(df: pd.DataFrame) -> DetectionResult:
-    candidates = [
-        col
-        for col in df.columns
-        if str(col).strip().lower() in TARGET_NAME_HINTS
+    named_candidates = [
+        col for col in df.columns if str(col).strip().lower() in TARGET_NAME_HINTS
     ]
-    if candidates:
+    if named_candidates:
         return DetectionResult(
             learning_type="Supervised Learning",
             reason=(
-                "This dataset contains a target-like column name, "
-                "so Supervised Learning was applied."
+                "A target-like column name was found, so the app defaulted "
+                "to Supervised Learning."
             ),
-            candidate_targets=candidates,
+            candidate_targets=named_candidates,
         )
+
+    heuristic_candidates: List[str] = []
+    for col in df.columns:
+        series = df[col]
+        nunique = series.nunique(dropna=True)
+        if nunique <= 1:
+            continue
+        if series.dtype == "object" and nunique <= max(20, int(len(df) * 0.2)):
+            heuristic_candidates.append(col)
+        if pd.api.types.is_numeric_dtype(series) and nunique <= 15:
+            heuristic_candidates.append(col)
+
+    heuristic_candidates = list(dict.fromkeys(heuristic_candidates))
+    if heuristic_candidates:
+        return DetectionResult(
+            learning_type="Supervised Learning",
+            reason=(
+                "No explicit target name was found, but one or more low-cardinality "
+                "columns suggest a supervised task."
+            ),
+            candidate_targets=heuristic_candidates,
+        )
+
     return DetectionResult(
         learning_type="Unsupervised Learning",
         reason=(
-            "No obvious target/label column was detected, so Unsupervised "
-            "Learning was applied."
+            "No reliable target signal was found, so the app defaulted to "
+            "Unsupervised Learning."
         ),
         candidate_targets=[],
     )
@@ -67,26 +91,35 @@ def detect_learning_type(df: pd.DataFrame) -> DetectionResult:
 def get_problem_type(series: pd.Series) -> str:
     if pd.api.types.is_numeric_dtype(series):
         unique_vals = series.dropna().nunique()
-        if unique_vals <= 10:
+        if unique_vals <= 12:
             return "Classification"
         return "Regression"
     return "Classification"
 
 
 def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-    return df.dropna(axis=0, how="all").dropna(axis=1, how="all")
+    cleaned = df.dropna(axis=0, how="all").dropna(axis=1, how="all")
+    cleaned.columns = [str(col).strip() for col in cleaned.columns]
+    return cleaned
 
 
 def encode_features(X: pd.DataFrame) -> pd.DataFrame:
     X_encoded = X.copy()
-    for col in X_encoded.columns:
-        if X_encoded[col].dtype == "object":
-            X_encoded[col] = X_encoded[col].fillna("Unknown")
-            le = LabelEncoder()
-            X_encoded[col] = le.fit_transform(X_encoded[col].astype(str))
-        else:
-            X_encoded[col] = X_encoded[col].fillna(X_encoded[col].median())
+    object_cols = X_encoded.select_dtypes(include=["object", "category"]).columns
+    for col in object_cols:
+        X_encoded[col] = X_encoded[col].fillna("Unknown").astype(str)
+
+    numeric_cols = X_encoded.select_dtypes(include=["number"]).columns
+    for col in numeric_cols:
+        X_encoded[col] = X_encoded[col].fillna(X_encoded[col].median())
+
+    X_encoded = pd.get_dummies(X_encoded, columns=object_cols, drop_first=True)
     return X_encoded
+
+
+@st.cache_data(show_spinner=False)
+def load_csv_from_bytes(file_bytes: bytes) -> pd.DataFrame:
+    return pd.read_csv(io.BytesIO(file_bytes))
 
 
 def show_banner(learning_type: str, reason: str) -> None:
@@ -105,6 +138,9 @@ def render_dataset_overview(df: pd.DataFrame) -> None:
     st.subheader("Dataset Overview")
     st.write(df.head())
     st.write("Shape:", df.shape)
+    st.write("Duplicate rows:", int(df.duplicated().sum()))
+    st.write("Data types:")
+    st.write(df.dtypes.astype(str))
     st.write("Missing values:")
     st.write(df.isna().sum())
 
@@ -139,8 +175,12 @@ def render_visualizations(df: pd.DataFrame) -> None:
             lower, upper = q1 - 1.5 * iqr, q3 + 1.5 * iqr
             outliers = df[(df[col] < lower) | (df[col] > upper)]
         else:
-            z_scores = (series - series.mean()) / series.std()
-            outliers = df.loc[z_scores.abs() > 3]
+            std = series.std()
+            if std == 0:
+                outliers = df.iloc[0:0]
+            else:
+                z_scores = (series - series.mean()) / std
+                outliers = df.loc[z_scores.abs() > 3]
         fig, ax = plt.subplots()
         sns.boxplot(y=df[col], ax=ax)
         st.pyplot(fig)
@@ -154,13 +194,44 @@ def train_supervised(df: pd.DataFrame, target: str) -> None:
     problem_type = get_problem_type(df[target])
     st.write(f"Detected problem type: **{problem_type}**")
 
+    if target not in df.columns:
+        st.error("Selected target column was not found.")
+        return
+
     X = df.drop(columns=[target])
     y = df[target]
     X_encoded = encode_features(X)
 
+    if X_encoded.empty:
+        st.error("No usable feature columns were found after encoding.")
+        return
+
+    if y.nunique(dropna=True) <= 1:
+        st.error("Target column has only one class/value. Choose a different target.")
+        return
+
     test_size = st.slider("Train-Test Split (Test Size)", 0.1, 0.5, 0.2, 0.05)
+    use_scaling = st.checkbox(
+        "Standardize numeric features (recommended for Logistic Regression / K-NN)",
+        value=True,
+    )
+
+    X_final = X_encoded.copy()
+    if use_scaling:
+        scaler = StandardScaler()
+        X_final = pd.DataFrame(
+            scaler.fit_transform(X_encoded),
+            columns=X_encoded.columns,
+            index=X_encoded.index,
+        )
+
+    stratify = y if problem_type == "Classification" and y.nunique() > 1 else None
     X_train, X_test, y_train, y_test = train_test_split(
-        X_encoded, y, test_size=test_size, random_state=42
+        X_final,
+        y,
+        test_size=test_size,
+        random_state=42,
+        stratify=stratify,
     )
 
     if problem_type == "Classification":
@@ -191,8 +262,16 @@ def train_supervised(df: pd.DataFrame, target: str) -> None:
             st.write("Sample prediction probabilities:")
             st.write(model.predict_proba(X_test)[:5])
         st.write("Accuracy:", accuracy_score(y_test, preds))
+        st.write("Precision (weighted):", precision_score(y_test, preds, average="weighted", zero_division=0))
+        st.write("Recall (weighted):", recall_score(y_test, preds, average="weighted", zero_division=0))
+        st.write("F1 (weighted):", f1_score(y_test, preds, average="weighted", zero_division=0))
         st.write("Confusion Matrix:")
-        st.write(confusion_matrix(y_test, preds))
+        cm = confusion_matrix(y_test, preds)
+        fig, ax = plt.subplots()
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("Actual")
+        st.pyplot(fig)
         st.text("Classification Report:")
         st.text(classification_report(y_test, preds))
     else:
@@ -201,6 +280,42 @@ def train_supervised(df: pd.DataFrame, target: str) -> None:
         st.write("MAE:", mean_absolute_error(y_test, predictions))
         st.write("MSE:", mean_squared_error(y_test, predictions))
         st.write("R2 Score:", r2_score(y_test, predictions))
+
+    st.markdown("### Quick Model Comparison")
+    rows: List[Dict[str, float]] = []
+    for compare_name, compare_model in model_options.items():
+        compare_model.fit(X_train, y_train)
+        compare_preds = compare_model.predict(X_test)
+        if problem_type == "Classification":
+            rows.append(
+                {
+                    "Model": compare_name,
+                    "Accuracy": float(accuracy_score(y_test, compare_preds)),
+                    "F1 (weighted)": float(
+                        f1_score(y_test, compare_preds, average="weighted", zero_division=0)
+                    ),
+                }
+            )
+        else:
+            rows.append(
+                {
+                    "Model": compare_name,
+                    "MAE": float(mean_absolute_error(y_test, compare_preds)),
+                    "R2": float(r2_score(y_test, compare_preds)),
+                }
+            )
+
+    comparison_df = pd.DataFrame(rows)
+    sort_col = "Accuracy" if problem_type == "Classification" else "R2"
+    st.dataframe(comparison_df.sort_values(by=sort_col, ascending=False), use_container_width=True)
+
+    results_df = pd.DataFrame({"actual": y_test, "predicted": predictions}, index=y_test.index)
+    st.download_button(
+        "Download predictions as CSV",
+        data=results_df.to_csv(index=False).encode("utf-8"),
+        file_name="datasense_predictions.csv",
+        mime="text/csv",
+    )
 
     st.markdown(
         "**Model applicability check:** Logistic Regression, Decision Tree, "
@@ -211,18 +326,30 @@ def train_supervised(df: pd.DataFrame, target: str) -> None:
 
 def train_unsupervised(df: pd.DataFrame) -> None:
     st.subheader("Unsupervised Learning")
-    numeric_df = df.select_dtypes(include=["number"]).dropna()
+    numeric_df = df.select_dtypes(include=["number"]).copy()
+    numeric_df = numeric_df.dropna()
     if numeric_df.empty:
         st.warning("Unsupervised learning needs numeric columns.")
         return
 
+    scaler = StandardScaler()
+    scaled = pd.DataFrame(
+        scaler.fit_transform(numeric_df),
+        columns=numeric_df.columns,
+        index=numeric_df.index,
+    )
+
     use_pca = st.checkbox("Apply PCA (Dimensionality Reduction)")
-    features = numeric_df
+    features = scaled
 
     if use_pca:
+        if features.shape[1] < 2:
+            st.warning("PCA requires at least two numeric features.")
+            return
         pca_components = st.slider("PCA Components", 2, min(5, features.shape[1]), 2)
         pca = PCA(n_components=pca_components)
-        features = pd.DataFrame(pca.fit_transform(features))
+        features = pd.DataFrame(pca.fit_transform(features), index=features.index)
+        st.write("Explained variance ratio:", pca.explained_variance_ratio_)
 
     k = st.slider("Number of Clusters (K)", 2, 10, 3)
     kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
@@ -232,6 +359,9 @@ def train_unsupervised(df: pd.DataFrame) -> None:
 
     st.write("Cluster Counts:")
     st.write(df_clustered["cluster"].value_counts())
+
+    if len(np.unique(clusters)) > 1 and features.shape[0] > len(np.unique(clusters)):
+        st.write("Silhouette Score:", float(silhouette_score(features, clusters)))
 
     if features.shape[1] >= 2:
         fig, ax = plt.subplots()
@@ -257,8 +387,16 @@ def main() -> None:
         st.info("Upload a dataset to get started.")
         return
 
-    df = pd.read_csv(uploaded_file)
+    try:
+        df = load_csv_from_bytes(uploaded_file.getvalue())
+    except Exception as exc:
+        st.error(f"Could not read CSV file: {exc}")
+        return
+
     df = clean_dataframe(df)
+    if df.empty:
+        st.error("The uploaded file is empty after cleaning. Please upload a valid CSV.")
+        return
 
     detection = detect_learning_type(df)
     show_banner(detection.learning_type, detection.reason)
@@ -266,8 +404,14 @@ def main() -> None:
     render_dataset_overview(df)
 
     if detection.learning_type == "Supervised Learning":
-        default_target = detection.candidate_targets[0] if detection.candidate_targets else None
-        target = st.selectbox("Select target column", df.columns, index=(df.columns.get_loc(default_target) if default_target else 0))
+        default_target = (
+            detection.candidate_targets[0] if detection.candidate_targets else None
+        )
+        target = st.selectbox(
+            "Select target column",
+            df.columns,
+            index=(df.columns.get_loc(default_target) if default_target else 0),
+        )
         train_supervised(df, target)
     else:
         target_choice = st.checkbox("I actually have a target column")

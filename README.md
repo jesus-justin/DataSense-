@@ -1,26 +1,29 @@
 # DataSense
-Smart Predictive Analytics & Visualization Tool
+Smart Predictive Analytics and Visualization Tool
 
-DataSense is a beginner-friendly yet powerful Machine Learning analytics web app. It detects whether a dataset is **Supervised** or **Unsupervised**, then guides the user through appropriate models, visualizations, and evaluation metrics.
+DataSense is a beginner-friendly yet practical Machine Learning analytics web app built with Streamlit. It helps users upload CSV data, detect likely ML task type, train models, compare performance, and explore visual insights.
 
-## ✨ Features
+## Features
 - Upload CSV datasets
-- Auto-detect learning type (Supervised vs Unsupervised)
-- Supervised Learning
-	- Classification or Regression detection
-	- Train/Test split control
+- Smart task detection with target-name and low-cardinality heuristics
+- Supervised learning workflow:
+	- Classification/Regression detection
+	- Train/test split and optional feature scaling
 	- Models: Linear Regression, Logistic Regression, Decision Tree, Random Forest, K-NN
-	- Metrics: Accuracy, Confusion Matrix, MAE, MSE, R2
-- Unsupervised Learning
+	- Metrics: Accuracy, Precision, Recall, F1, Confusion Matrix, MAE, MSE, R2
+	- Quick side-by-side model comparison table
+	- Downloadable prediction results (CSV)
+- Unsupervised learning workflow:
 	- K-Means clustering
-	- Optional PCA (Dimensionality Reduction)
-- Visualizations
-	- Scatter Plot
-	- Correlation Heatmap
-	- Outlier Detection (IQR / Z-score)
+	- Optional PCA (with explained variance)
+	- Silhouette score quality indicator
+- Visualizations:
+	- Scatter plot
+	- Correlation heatmap
+	- Outlier detection (IQR / Z-score)
 	- Cluster visualization
 
-## 📌 Machine Learning Concepts (from the screenshot)
+## Machine Learning Concepts
 ```mermaid
 flowchart LR
 		A[Types of Machine Learning]
@@ -33,32 +36,32 @@ flowchart LR
 		C --> H[Dimensionality Reduction]
 ```
 
-## 📁 Sample Datasets
-Use the sample datasets in [sample_datasets](sample_datasets):
+## Sample Datasets
+Use sample data in [sample_datasets](sample_datasets):
 - supervised_demo.csv
 - unsupervised_demo.csv
 
-## ✅ Setup
+## Setup
 1. Create a virtual environment (optional)
 2. Install dependencies:
-	 ```bash
-	 pip install -r requirements.txt
-	 ```
+	```bash
+	pip install -r requirements.txt
+	```
 3. Run the app:
-	 ```bash
-	 streamlit run app.py
-	 ```
+	```bash
+	streamlit run app.py
+	```
+4. Open the landing page (optional):
+	- Open `index.html` in your browser for a project overview.
 
-## 🧠 Auto-Detection Logic
-The app checks for common target column names (like `target`, `label`, `class`, `y`).
-If found, Supervised Learning is chosen; otherwise, Unsupervised Learning is used.
+## Auto-Detection Logic
+The app first checks for common target column names such as `target`, `label`, `class`, and `y`.
+If none are found, it applies a heuristic based on low-cardinality columns to suggest a likely supervised target.
+Otherwise, it defaults to unsupervised analysis.
 
-## 🚀 Advanced Ideas (Optional Enhancements)
+## Future Enhancements
 - Hyperparameter tuning (GridSearchCV)
 - Feature importance charts
 - SHAP explanations
 - Model comparison dashboards
 - Export predictions and trained models
-
-## 📷 Screenshot Reference
-The diagram in the README mirrors the concepts from your Machine Learning types screenshot.
