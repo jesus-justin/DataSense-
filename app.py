@@ -348,6 +348,25 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
         st.pyplot(fig)
         st.text("Classification Report:")
         st.text(classification_report(y_test, preds))
+
+        if y_test.nunique() == 2 and hasattr(model, "predict_proba"):
+            positive_class = sorted(pd.Series(y_test).dropna().unique())[-1]
+            proba = model.predict_proba(X_test)
+            class_list = list(model.classes_)
+            if positive_class in class_list:
+                pos_idx = class_list.index(positive_class)
+                y_binary = (y_test == positive_class).astype(int)
+                y_score = proba[:, pos_idx]
+                fpr, tpr, _ = roc_curve(y_binary, y_score)
+                auc_score = roc_auc_score(y_binary, y_score)
+                fig, ax = plt.subplots()
+                ax.plot(fpr, tpr, label=f"AUC = {auc_score:.3f}")
+                ax.plot([0, 1], [0, 1], linestyle="--", color="gray")
+                ax.set_xlabel("False Positive Rate")
+                ax.set_ylabel("True Positive Rate")
+                ax.set_title("ROC Curve")
+                ax.legend(loc="lower right")
+                st.pyplot(fig)
     else:
         st.write("Sample predictions:")
         st.write(predictions[:5])
