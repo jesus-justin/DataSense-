@@ -493,6 +493,10 @@ def train_unsupervised(df: pd.DataFrame, random_state: int) -> None:
     st.write("Cluster Counts:")
     st.write(df_clustered["cluster"].value_counts())
 
+    centers_df = pd.DataFrame(kmeans.cluster_centers_, columns=features.columns)
+    st.write("Cluster centers:")
+    st.dataframe(centers_df, use_container_width=True)
+
     if len(np.unique(clusters)) > 1 and features.shape[0] > len(np.unique(clusters)):
         st.write("Silhouette Score:", float(silhouette_score(features, clusters)))
 
@@ -506,6 +510,15 @@ def train_unsupervised(df: pd.DataFrame, random_state: int) -> None:
             ax=ax,
         )
         st.pyplot(fig)
+
+    download_clusters = features.copy()
+    download_clusters["cluster"] = clusters
+    st.download_button(
+        "Download clustered dataset as CSV",
+        data=download_clusters.to_csv(index=False).encode("utf-8"),
+        file_name="datasense_clusters.csv",
+        mime="text/csv",
+    )
 
 
 def main() -> None:
