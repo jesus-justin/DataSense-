@@ -265,6 +265,7 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
             st.warning("Class imbalance detected (majority class > 80%). Consider resampling.")
 
     test_size = st.slider("Train-Test Split (Test Size)", 0.1, 0.5, 0.2, 0.05)
+    run_cv = st.checkbox("Run 5-fold cross-validation on selected model", value=False)
     use_scaling = st.checkbox(
         "Standardize numeric features (recommended for Logistic Regression / K-NN)",
         value=True,
@@ -304,6 +305,13 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
 
     model_name = st.selectbox("Choose a model", list(model_options.keys()))
     model = model_options[model_name]
+
+    if run_cv:
+        cv_scoring = "accuracy" if problem_type == "Classification" else "r2"
+        cv_scores = cross_val_score(model, X_final, y, cv=5, scoring=cv_scoring)
+        st.write(f"5-fold CV ({cv_scoring}) mean:", float(np.mean(cv_scores)))
+        st.write(f"5-fold CV ({cv_scoring}) std:", float(np.std(cv_scores)))
+
     model.fit(X_train, y_train)
     predictions = model.predict(X_test)
 
