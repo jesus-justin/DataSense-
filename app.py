@@ -383,6 +383,22 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
     sort_col = "Accuracy" if problem_type == "Classification" else "R2"
     st.dataframe(comparison_df.sort_values(by=sort_col, ascending=False), use_container_width=True)
 
+    if hasattr(model, "feature_importances_"):
+        importance_df = pd.DataFrame(
+            {"feature": X_train.columns, "importance": model.feature_importances_}
+        ).sort_values(by="importance", ascending=False)
+        st.markdown("### Feature Importance")
+        st.dataframe(importance_df.head(20), use_container_width=True)
+    elif hasattr(model, "coef_"):
+        coef = model.coef_
+        if isinstance(coef, np.ndarray):
+            coef_flat = coef[0] if coef.ndim > 1 else coef
+            coef_df = pd.DataFrame(
+                {"feature": X_train.columns, "coefficient": coef_flat}
+            ).sort_values(by="coefficient", key=np.abs, ascending=False)
+            st.markdown("### Model Coefficients")
+            st.dataframe(coef_df.head(20), use_container_width=True)
+
     results_df = pd.DataFrame({"actual": y_test, "predicted": predictions}, index=y_test.index)
     st.download_button(
         "Download predictions as CSV",
