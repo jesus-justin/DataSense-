@@ -205,7 +205,7 @@ def render_visualizations(df: pd.DataFrame) -> None:
         st.info("Outlier detection requires numeric columns.")
 
 
-def train_supervised(df: pd.DataFrame, target: str) -> None:
+def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
     st.subheader("Supervised Learning")
     problem_type = get_problem_type(df[target])
     st.write(f"Detected problem type: **{problem_type}**")
@@ -246,22 +246,22 @@ def train_supervised(df: pd.DataFrame, target: str) -> None:
         X_final,
         y,
         test_size=test_size,
-        random_state=42,
+        random_state=random_state,
         stratify=stratify,
     )
 
     if problem_type == "Classification":
         model_options = {
             "Logistic Regression": LogisticRegression(max_iter=1000),
-            "Decision Tree": DecisionTreeClassifier(),
+            "Decision Tree": DecisionTreeClassifier(random_state=random_state),
             "K-Nearest Neighbors": KNeighborsClassifier(),
-            "Random Forest": RandomForestClassifier(),
+            "Random Forest": RandomForestClassifier(random_state=random_state),
         }
     else:
         model_options = {
             "Linear Regression": LinearRegression(),
-            "Decision Tree": DecisionTreeRegressor(),
-            "Random Forest": RandomForestRegressor(),
+            "Decision Tree": DecisionTreeRegressor(random_state=random_state),
+            "Random Forest": RandomForestRegressor(random_state=random_state),
         }
 
     model_name = st.selectbox("Choose a model", list(model_options.keys()))
@@ -340,7 +340,7 @@ def train_supervised(df: pd.DataFrame, target: str) -> None:
     )
 
 
-def train_unsupervised(df: pd.DataFrame) -> None:
+def train_unsupervised(df: pd.DataFrame, random_state: int) -> None:
     st.subheader("Unsupervised Learning")
     numeric_df = df.select_dtypes(include=["number"]).copy()
     numeric_df = numeric_df.dropna()
@@ -368,7 +368,7 @@ def train_unsupervised(df: pd.DataFrame) -> None:
         st.write("Explained variance ratio:", pca.explained_variance_ratio_)
 
     k = st.slider("Number of Clusters (K)", 2, 10, 3)
-    kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
+    kmeans = KMeans(n_clusters=k, random_state=random_state, n_init=10)
     clusters = kmeans.fit_predict(features)
     df_clustered = features.copy()
     df_clustered["cluster"] = clusters
@@ -437,14 +437,14 @@ def main() -> None:
             df.columns,
             index=(df.columns.get_loc(default_target) if default_target else 0),
         )
-        train_supervised(df, target)
+        train_supervised(df, target, settings.random_state)
     else:
         target_choice = st.checkbox("I actually have a target column")
         if target_choice:
             target = st.selectbox("Select target column", df.columns)
-            train_supervised(df, target)
+            train_supervised(df, target, settings.random_state)
         else:
-            train_unsupervised(df)
+            train_unsupervised(df, settings.random_state)
 
     render_visualizations(df)
 
