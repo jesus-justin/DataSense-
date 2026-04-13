@@ -468,6 +468,22 @@ def train_unsupervised(df: pd.DataFrame, random_state: int) -> None:
         features = pd.DataFrame(pca.fit_transform(features), index=features.index)
         st.write("Explained variance ratio:", pca.explained_variance_ratio_)
 
+    show_elbow = st.checkbox("Show elbow analysis", value=False)
+    if show_elbow:
+        max_k = min(10, max(2, len(features) - 1))
+        inertias = []
+        ks = list(range(2, max_k + 1))
+        for elbow_k in ks:
+            elbow_model = KMeans(n_clusters=elbow_k, random_state=random_state, n_init=10)
+            elbow_model.fit(features)
+            inertias.append(float(elbow_model.inertia_))
+        fig, ax = plt.subplots()
+        ax.plot(ks, inertias, marker="o")
+        ax.set_xlabel("K")
+        ax.set_ylabel("Inertia")
+        ax.set_title("Elbow Curve")
+        st.pyplot(fig)
+
     k = st.slider("Number of Clusters (K)", 2, 10, 3)
     kmeans = KMeans(n_clusters=k, random_state=random_state, n_init=10)
     clusters = kmeans.fit_predict(features)
