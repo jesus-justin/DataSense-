@@ -161,6 +161,20 @@ def render_dataset_overview(df: pd.DataFrame) -> None:
     st.write(df.isna().sum())
 
 
+def render_dataset_profile(df: pd.DataFrame) -> None:
+    st.subheader("Data Quality Profile")
+    numeric_cols = df.select_dtypes(include=["number"]).shape[1]
+    categorical_cols = df.select_dtypes(exclude=["number"]).shape[1]
+    duplicate_rows = int(df.duplicated().sum())
+    missing_total = int(df.isna().sum().sum())
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Numeric Columns", numeric_cols)
+    c2.metric("Categorical Columns", categorical_cols)
+    c3.metric("Duplicate Rows", duplicate_rows)
+    c4.metric("Total Missing", missing_total)
+
+
 def render_visualizations(df: pd.DataFrame) -> None:
     st.subheader("Visualizations")
     numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
@@ -180,6 +194,22 @@ def render_visualizations(df: pd.DataFrame) -> None:
         st.pyplot(fig)
     else:
         st.info("Correlation heatmap requires at least two numeric columns.")
+
+    if len(numeric_cols) >= 2:
+        threshold = st.slider("High correlation threshold", 0.5, 0.99, 0.85, 0.01)
+        corr_matrix = df[numeric_cols].corr().abs()
+        mask = np.triu(np.ones_like(corr_matrix, dtype=bool), k=1)
+        upper = corr_matrix.where(mask)
+        pairs = (
+            upper.stack()
+            .reset_index()
+            .rename(columns={"level_0": "Feature A", "level_1": "Feature B", 0: "Abs Correlation"})
+        )
+        strong_pairs = pairs[pairs["Abs Correlation"] >= threshold].sort_values(
+            by="Abs Correlation", ascending=False
+        )
+        st.write("Highly correlated feature pairs:")
+        st.dataframe(strong_pairs.head(20), use_container_width=True)
 
     if numeric_cols:
         method = st.selectbox("Outlier Detection Method", ["IQR", "Z-score"])
@@ -427,6 +457,7 @@ def main() -> None:
     show_banner(detection.learning_type, detection.reason)
 
     render_dataset_overview(df)
+    render_dataset_profile(df)
 
     if detection.learning_type == "Supervised Learning":
         default_target = (
