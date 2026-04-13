@@ -307,6 +307,18 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
     model.fit(X_train, y_train)
     predictions = model.predict(X_test)
 
+    st.markdown("### Baseline Benchmark")
+    if problem_type == "Classification":
+        baseline = DummyClassifier(strategy="most_frequent")
+        baseline.fit(X_train, y_train)
+        baseline_preds = baseline.predict(X_test)
+        st.write("Baseline accuracy (most frequent class):", accuracy_score(y_test, baseline_preds))
+    else:
+        baseline = DummyRegressor(strategy="mean")
+        baseline.fit(X_train, y_train)
+        baseline_preds = baseline.predict(X_test)
+        st.write("Baseline MAE (predict mean):", mean_absolute_error(y_test, baseline_preds))
+
     st.write("Model Results")
     if problem_type == "Classification":
         preds = predictions
