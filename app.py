@@ -256,6 +256,14 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
         st.error("Target column has only one class/value. Choose a different target.")
         return
 
+    if problem_type == "Classification":
+        class_dist = y.value_counts(normalize=True).rename("ratio").reset_index()
+        class_dist.columns = ["class", "ratio"]
+        st.write("Class distribution:")
+        st.dataframe(class_dist, use_container_width=True)
+        if not class_dist.empty and class_dist["ratio"].max() > 0.8:
+            st.warning("Class imbalance detected (majority class > 80%). Consider resampling.")
+
     test_size = st.slider("Train-Test Split (Test Size)", 0.1, 0.5, 0.2, 0.05)
     use_scaling = st.checkbox(
         "Standardize numeric features (recommended for Logistic Regression / K-NN)",
