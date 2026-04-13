@@ -354,6 +354,14 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
         st.write("MAE:", mean_absolute_error(y_test, predictions))
         st.write("MSE:", mean_squared_error(y_test, predictions))
         st.write("R2 Score:", r2_score(y_test, predictions))
+        residuals = y_test - predictions
+        fig, ax = plt.subplots()
+        sns.scatterplot(x=predictions, y=residuals, ax=ax)
+        ax.axhline(0, color="red", linestyle="--")
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("Residual")
+        ax.set_title("Residual Plot")
+        st.pyplot(fig)
 
     st.markdown("### Quick Model Comparison")
     rows: List[Dict[str, float]] = []
