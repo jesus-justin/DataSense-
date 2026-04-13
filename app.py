@@ -45,6 +45,19 @@ class DetectionResult:
     candidate_targets: List[str]
 
 
+@dataclass
+class AppSettings:
+    random_state: int
+    drop_duplicates: bool
+
+
+def render_app_settings() -> AppSettings:
+    st.sidebar.header("Experiment Settings")
+    random_state = st.sidebar.number_input("Random seed", min_value=0, max_value=9999, value=42)
+    drop_duplicates = st.sidebar.checkbox("Drop duplicate rows", value=False)
+    return AppSettings(random_state=int(random_state), drop_duplicates=drop_duplicates)
+
+
 def detect_learning_type(df: pd.DataFrame) -> DetectionResult:
     named_candidates = [
         col for col in df.columns if str(col).strip().lower() in TARGET_NAME_HINTS
@@ -385,6 +398,8 @@ def main() -> None:
         "with beginner-friendly, powerful analytics."
     )
 
+    settings = render_app_settings()
+
     uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
     if not uploaded_file:
         st.info("Upload a dataset to get started.")
@@ -397,6 +412,13 @@ def main() -> None:
         return
 
     df = clean_dataframe(df)
+    if settings.drop_duplicates:
+        before_rows = len(df)
+        df = df.drop_duplicates()
+        removed = before_rows - len(df)
+        if removed > 0:
+            st.info(f"Removed {removed} duplicate rows.")
+
     if df.empty:
         st.error("The uploaded file is empty after cleaning. Please upload a valid CSV.")
         return
