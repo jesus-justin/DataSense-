@@ -8,18 +8,28 @@ DataSense is a beginner-friendly yet practical Machine Learning analytics web ap
 - Smart task detection with target-name and low-cardinality heuristics
 - Supervised learning workflow:
 	- Classification/Regression detection
+	- Class distribution and imbalance warning
 	- Train/test split and optional feature scaling
+	- Reproducible training via configurable random seed
+	- Optional 5-fold cross-validation
+	- Baseline benchmark comparison (Dummy models)
 	- Models: Linear Regression, Logistic Regression, Decision Tree, Random Forest, K-NN
-	- Metrics: Accuracy, Precision, Recall, F1, Confusion Matrix, MAE, MSE, R2
+	- Metrics: Accuracy, Precision, Recall, F1, Confusion Matrix, ROC-AUC (binary), MAE, MSE, R2
 	- Quick side-by-side model comparison table
+	- Feature importance / coefficient views
+	- Regression residual plot
 	- Downloadable prediction results (CSV)
 - Unsupervised learning workflow:
 	- K-Means clustering
 	- Optional PCA (with explained variance)
+	- Optional elbow analysis for K selection
 	- Silhouette score quality indicator
+	- Cluster center table
+	- Download clustered dataset (CSV)
 - Visualizations:
 	- Scatter plot
 	- Correlation heatmap
+	- High-correlation pair finder
 	- Outlier detection (IQR / Z-score)
 	- Cluster visualization
 
