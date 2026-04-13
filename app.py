@@ -49,13 +49,15 @@ class DetectionResult:
 class AppSettings:
     random_state: int
     drop_duplicates: bool
+    max_rows: int
 
 
 def render_app_settings() -> AppSettings:
     st.sidebar.header("Experiment Settings")
     random_state = st.sidebar.number_input("Random seed", min_value=0, max_value=9999, value=42)
     drop_duplicates = st.sidebar.checkbox("Drop duplicate rows", value=False)
-    return AppSettings(random_state=int(random_state), drop_duplicates=drop_duplicates)
+    max_rows = st.sidebar.slider("Max rows to use (0 = all)", min_value=0, max_value=50000, value=0, step=500)
+    return AppSettings(random_state=int(random_state), drop_duplicates=drop_duplicates, max_rows=int(max_rows))
 
 
 def detect_learning_type(df: pd.DataFrame) -> DetectionResult:
@@ -548,6 +550,10 @@ def main() -> None:
         removed = before_rows - len(df)
         if removed > 0:
             st.info(f"Removed {removed} duplicate rows.")
+
+    if settings.max_rows > 0 and len(df) > settings.max_rows:
+        df = df.sample(n=settings.max_rows, random_state=settings.random_state)
+        st.info(f"Sampled dataset down to {settings.max_rows} rows for faster analysis.")
 
     if df.empty:
         st.error("The uploaded file is empty after cleaning. Please upload a valid CSV.")
