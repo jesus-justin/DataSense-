@@ -51,6 +51,7 @@ class AppSettings:
     drop_duplicates: bool
     max_rows: int
     preview_rows: int
+    missing_strategy: str
 
 
 def render_app_settings() -> AppSettings:
@@ -59,11 +60,17 @@ def render_app_settings() -> AppSettings:
     drop_duplicates = st.sidebar.checkbox("Drop duplicate rows", value=False)
     max_rows = st.sidebar.slider("Max rows to use (0 = all)", min_value=0, max_value=50000, value=0, step=500)
     preview_rows = st.sidebar.slider("Preview rows", min_value=3, max_value=25, value=5)
+    missing_strategy = st.sidebar.selectbox(
+        "Missing-value strategy",
+        ["keep", "drop_rows", "median_mode", "mean_mode"],
+        index=2,
+    )
     return AppSettings(
         random_state=int(random_state),
         drop_duplicates=drop_duplicates,
         max_rows=int(max_rows),
         preview_rows=int(preview_rows),
+        missing_strategy=str(missing_strategy),
     )
 
 
@@ -126,6 +133,29 @@ def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     cleaned = df.dropna(axis=0, how="all").dropna(axis=1, how="all")
     cleaned.columns = [str(col).strip() for col in cleaned.columns]
     return cleaned
+
+
+def impute_dataframe(df: pd.DataFrame, strategy: str) -> pd.DataFrame:
+    if strategy == "keep":
+        return df
+    if strategy == "drop_rows":
+        return df.dropna(axis=0)
+
+    imputed = df.copy()
+    numeric_cols = imputed.select_dtypes(include=["number"]).columns
+    categorical_cols = imputed.select_dtypes(exclude=["number"]).columns
+
+    if strategy in {"median_mode", "mean_mode"}:
+        for col in numeric_cols:
+            fill_value = imputed[col].median() if strategy == "median_mode" else imputed[col].mean()
+            imputed[col] = imputed[col].fillna(fill_value)
+
+    for col in categorical_cols:
+        mode_values = imputed[col].mode(dropna=True)
+        fill_value = mode_values.iloc[0] if not mode_values.empty else "Unknown"
+        imputed[col] = imputed[col].fillna(fill_value)
+
+    return imputed
 
 
 def encode_features(X: pd.DataFrame) -> pd.DataFrame:
@@ -551,6 +581,7 @@ def main() -> None:
         return
 
     df = clean_dataframe(df)
+    df = impute_dataframe(df, settings.missing_strategy)
     if settings.drop_duplicates:
         before_rows = len(df)
         df = df.drop_duplicates()
