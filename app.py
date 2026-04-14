@@ -7,6 +7,7 @@ import pandas as pd
 import seaborn as sns
 import streamlit as st
 from matplotlib import pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.linear_model import LinearRegression, LogisticRegression
@@ -321,6 +322,16 @@ def render_visualizations(df: pd.DataFrame) -> None:
         fig, ax = plt.subplots()
         sns.scatterplot(data=df, x=x_axis, y=y_axis, ax=ax)
         st.pyplot(fig)
+
+        if len(numeric_cols) >= 3 and st.checkbox("Show 3D scatter plot", value=False):
+            z_axis = st.selectbox("Scatter Z-axis", numeric_cols, key="scatter_z")
+            fig = plt.figure()
+            ax3d = fig.add_subplot(111, projection="3d")
+            ax3d.scatter(df[x_axis], df[y_axis], df[z_axis], c=df[z_axis], cmap="viridis", s=25)
+            ax3d.set_xlabel(x_axis)
+            ax3d.set_ylabel(y_axis)
+            ax3d.set_zlabel(z_axis)
+            st.pyplot(fig)
     else:
         st.info("Add at least two numeric columns for scatter plots.")
 
