@@ -280,6 +280,19 @@ def render_dataset_profile(df: pd.DataFrame) -> None:
     c4.metric("Total Missing", missing_total)
 
 
+def render_target_profile(series: pd.Series) -> None:
+    st.subheader("Target Profile")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Non-null values", int(series.notna().sum()))
+    c2.metric("Unique values", int(series.nunique(dropna=True)))
+    c3.metric("Missing values", int(series.isna().sum()))
+
+    if pd.api.types.is_numeric_dtype(series):
+        st.write(series.describe())
+    else:
+        st.write(series.value_counts().head(10))
+
+
 def render_visualizations(df: pd.DataFrame) -> None:
     st.subheader("Visualizations")
     numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
@@ -351,6 +364,7 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
 
     X = df.drop(columns=[target])
     y = df[target]
+    render_target_profile(y)
     X_encoded = encode_features(X)
 
     if X_encoded.empty:
