@@ -507,6 +507,16 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
         st.text("Classification Report:")
         st.text(classification_report(y_test, preds))
 
+        metrics_report = pd.DataFrame(
+            [
+                {"Metric": "Accuracy", "Value": float(accuracy_score(y_test, preds))},
+                {"Metric": "Balanced Accuracy", "Value": float(balanced_accuracy_score(y_test, preds))},
+                {"Metric": "Precision (weighted)", "Value": float(precision_score(y_test, preds, average="weighted", zero_division=0))},
+                {"Metric": "Recall (weighted)", "Value": float(recall_score(y_test, preds, average="weighted", zero_division=0))},
+                {"Metric": "F1 (weighted)", "Value": float(f1_score(y_test, preds, average="weighted", zero_division=0))},
+            ]
+        )
+
         if y_test.nunique() == 2 and hasattr(model, "predict_proba"):
             positive_class = sorted(pd.Series(y_test).dropna().unique())[-1]
             proba = model.predict_proba(X_test)
@@ -541,6 +551,21 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
         ax.set_ylabel("Residual")
         ax.set_title("Residual Plot")
         st.pyplot(fig)
+        metrics_report = pd.DataFrame(
+            [
+                {"Metric": "MAE", "Value": float(mean_absolute_error(y_test, predictions))},
+                {"Metric": "MAPE", "Value": float(mean_absolute_percentage_error(y_test, predictions))},
+                {"Metric": "MSE", "Value": float(mean_squared_error(y_test, predictions))},
+                {"Metric": "R2", "Value": float(r2_score(y_test, predictions))},
+            ]
+        )
+
+    st.download_button(
+        "Download metrics report as CSV",
+        data=metrics_report.to_csv(index=False).encode("utf-8"),
+        file_name="datasense_metrics_report.csv",
+        mime="text/csv",
+    )
 
     st.markdown("### Quick Model Comparison")
     rows: List[Dict[str, float]] = []
