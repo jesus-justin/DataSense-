@@ -594,6 +594,28 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int, decision_
         mime="text/csv",
     )
 
+    report_lines = [
+        f"# DataSense Supervised Report",
+        f"- Model: {model_name}",
+        f"- Problem type: {problem_type}",
+        f"- Training rows: {len(X_train)}",
+        f"- Test rows: {len(X_test)}",
+        f"- Features used: {X_train.shape[1]}",
+    ]
+    if problem_type == "Classification":
+        report_lines.append(f"- Accuracy: {accuracy_score(y_test, preds):.4f}")
+        report_lines.append(f"- Balanced accuracy: {balanced_accuracy_score(y_test, preds):.4f}")
+    else:
+        report_lines.append(f"- MAE: {mean_absolute_error(y_test, predictions):.4f}")
+        report_lines.append(f"- R2: {r2_score(y_test, predictions):.4f}")
+
+    st.download_button(
+        "Download run summary as Markdown",
+        data="\n".join(report_lines).encode("utf-8"),
+        file_name="datasense_run_summary.md",
+        mime="text/markdown",
+    )
+
     st.markdown("### Quick Model Comparison")
     rows: List[Dict[str, float]] = []
     for compare_name, compare_model in model_options.items():
