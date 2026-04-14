@@ -570,6 +570,18 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
     sort_col = "Accuracy" if problem_type == "Classification" else "R2"
     st.dataframe(comparison_df.sort_values(by=sort_col, ascending=False), use_container_width=True)
 
+    st.markdown("### Training Summary")
+    summary_df = pd.DataFrame(
+        [
+            {"Item": "Selected model", "Value": model_name},
+            {"Item": "Training rows", "Value": len(X_train)},
+            {"Item": "Test rows", "Value": len(X_test)},
+            {"Item": "Features used", "Value": X_train.shape[1]},
+            {"Item": "Target type", "Value": problem_type},
+        ]
+    )
+    st.dataframe(summary_df, use_container_width=True)
+
     if hasattr(model, "feature_importances_"):
         importance_df = pd.DataFrame(
             {"feature": X_train.columns, "importance": model.feature_importances_}
