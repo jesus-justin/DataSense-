@@ -61,6 +61,7 @@ class AppSettings:
     log_transform: bool
     drop_high_correlation: bool
     correlation_threshold: float
+    decision_threshold: float
 
 
 def render_app_settings() -> AppSettings:
@@ -79,6 +80,7 @@ def render_app_settings() -> AppSettings:
     log_transform = st.sidebar.checkbox("Apply log1p transform to numeric features", value=False)
     drop_high_correlation = st.sidebar.checkbox("Drop highly correlated numeric features", value=False)
     correlation_threshold = st.sidebar.slider("Correlation threshold", 0.5, 0.99, 0.9, 0.01)
+    decision_threshold = st.sidebar.slider("Binary decision threshold", 0.1, 0.9, 0.5, 0.05)
     return AppSettings(
         random_state=int(random_state),
         drop_duplicates=drop_duplicates,
@@ -90,6 +92,7 @@ def render_app_settings() -> AppSettings:
         log_transform=log_transform,
         drop_high_correlation=drop_high_correlation,
         correlation_threshold=float(correlation_threshold),
+        decision_threshold=float(decision_threshold),
     )
 
 
@@ -383,7 +386,7 @@ def render_visualizations(df: pd.DataFrame) -> None:
         st.info("Outlier detection requires numeric columns.")
 
 
-def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
+def train_supervised(df: pd.DataFrame, target: str, random_state: int, decision_threshold: float) -> None:
     st.subheader("Supervised Learning")
     problem_type = get_problem_type(df[target])
     st.write(f"Detected problem type: **{problem_type}**")
@@ -486,6 +489,13 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
     st.write("Model Results")
     if problem_type == "Classification":
         preds = predictions
+        if hasattr(model, "predict_proba") and y_test.nunique() == 2:
+            positive_class = sorted(pd.Series(y_test).dropna().unique())[-1]
+            class_list = list(model.classes_)
+            if positive_class in class_list:
+                pos_idx = class_list.index(positive_class)
+                proba = model.predict_proba(X_test)[:, pos_idx]
+                preds = np.where(proba >= decision_threshold, positive_class, class_list[0])
         st.write("Sample predictions:")
         st.write(preds[:5])
         if hasattr(model, "predict_proba"):
@@ -802,12 +812,12 @@ def main() -> None:
             df.columns,
             index=(df.columns.get_loc(default_target) if default_target else 0),
         )
-        train_supervised(df, target, settings.random_state)
+        train_supervised(df, target, settings.random_state, settings.decision_threshold)
     else:
         target_choice = st.checkbox("I actually have a target column")
         if target_choice:
             target = st.selectbox("Select target column", df.columns)
-            train_supervised(df, target, settings.random_state)
+            train_supervised(df, target, settings.random_state, settings.decision_threshold)
         else:
             train_unsupervised(df, settings.random_state)
 
