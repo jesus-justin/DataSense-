@@ -623,6 +623,12 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int, decision_
         ).sort_values(by="importance", ascending=False)
         st.markdown("### Feature Importance")
         st.dataframe(importance_df.head(20), use_container_width=True)
+        st.download_button(
+            "Download feature importance as CSV",
+            data=importance_df.to_csv(index=False).encode("utf-8"),
+            file_name="datasense_feature_importance.csv",
+            mime="text/csv",
+        )
     elif hasattr(model, "coef_"):
         coef = model.coef_
         if isinstance(coef, np.ndarray):
@@ -632,6 +638,12 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int, decision_
             ).sort_values(by="coefficient", key=np.abs, ascending=False)
             st.markdown("### Model Coefficients")
             st.dataframe(coef_df.head(20), use_container_width=True)
+            st.download_button(
+                "Download coefficients as CSV",
+                data=coef_df.to_csv(index=False).encode("utf-8"),
+                file_name="datasense_coefficients.csv",
+                mime="text/csv",
+            )
 
     results_df = pd.DataFrame({"actual": y_test, "predicted": predictions}, index=y_test.index)
     st.download_button(
