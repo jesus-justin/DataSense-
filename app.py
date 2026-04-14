@@ -413,7 +413,13 @@ def render_visualizations(df: pd.DataFrame) -> None:
         st.info("Outlier detection requires numeric columns.")
 
 
-def train_supervised(df: pd.DataFrame, target: str, random_state: int, decision_threshold: float) -> None:
+def train_supervised(
+    df: pd.DataFrame,
+    target: str,
+    random_state: int,
+    decision_threshold: float,
+    imbalance_threshold: float,
+) -> None:
     st.subheader("Supervised Learning")
     problem_type = get_problem_type(df[target])
     st.write(f"Detected problem type: **{problem_type}**")
@@ -441,9 +447,9 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int, decision_
         class_dist.columns = ["class", "ratio"]
         st.write("Class distribution:")
         st.dataframe(class_dist, use_container_width=True)
-        if not class_dist.empty and class_dist["ratio"].max() > settings.imbalance_threshold:
+        if not class_dist.empty and class_dist["ratio"].max() > imbalance_threshold:
             st.warning(
-                f"Class imbalance detected (majority class > {settings.imbalance_threshold:.0%}). Consider resampling."
+                f"Class imbalance detected (majority class > {imbalance_threshold:.0%}). Consider resampling."
             )
 
     normalize_confusion = False
@@ -888,12 +894,24 @@ def main() -> None:
             df.columns,
             index=(df.columns.get_loc(default_target) if default_target else 0),
         )
-        train_supervised(df, target, settings.random_state, settings.decision_threshold)
+        train_supervised(
+            df,
+            target,
+            settings.random_state,
+            settings.decision_threshold,
+            settings.imbalance_threshold,
+        )
     else:
         target_choice = st.checkbox("I actually have a target column")
         if target_choice:
             target = st.selectbox("Select target column", df.columns)
-            train_supervised(df, target, settings.random_state, settings.decision_threshold)
+            train_supervised(
+                df,
+                target,
+                settings.random_state,
+                settings.decision_threshold,
+                settings.imbalance_threshold,
+            )
         else:
             train_unsupervised(df, settings.random_state)
 
