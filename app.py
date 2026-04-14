@@ -658,6 +658,7 @@ def train_unsupervised(df: pd.DataFrame, random_state: int) -> None:
 
     st.write("Cluster Counts:")
     st.write(df_clustered["cluster"].value_counts())
+    st.write("Cluster inertia:", float(kmeans.inertia_))
 
     centers_df = pd.DataFrame(kmeans.cluster_centers_, columns=features.columns)
     st.write("Cluster centers:")
