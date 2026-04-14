@@ -55,6 +55,8 @@ class AppSettings:
     remove_outliers: bool
     outlier_method: str
     log_transform: bool
+    drop_high_correlation: bool
+    correlation_threshold: float
 
 
 def render_app_settings() -> AppSettings:
@@ -71,6 +73,8 @@ def render_app_settings() -> AppSettings:
     remove_outliers = st.sidebar.checkbox("Remove outliers before training", value=False)
     outlier_method = st.sidebar.selectbox("Outlier method", ["IQR", "Z-score"], index=0)
     log_transform = st.sidebar.checkbox("Apply log1p transform to numeric features", value=False)
+    drop_high_correlation = st.sidebar.checkbox("Drop highly correlated numeric features", value=False)
+    correlation_threshold = st.sidebar.slider("Correlation threshold", 0.5, 0.99, 0.9, 0.01)
     return AppSettings(
         random_state=int(random_state),
         drop_duplicates=drop_duplicates,
@@ -80,6 +84,8 @@ def render_app_settings() -> AppSettings:
         remove_outliers=remove_outliers,
         outlier_method=str(outlier_method),
         log_transform=log_transform,
+        drop_high_correlation=drop_high_correlation,
+        correlation_threshold=float(correlation_threshold),
     )
 
 
@@ -203,6 +209,19 @@ def apply_log_transform(df: pd.DataFrame) -> pd.DataFrame:
         else:
             transformed[col] = np.log1p(series)
     return transformed
+
+
+def drop_highly_correlated_features(df: pd.DataFrame, threshold: float) -> pd.DataFrame:
+    numeric_df = df.select_dtypes(include=["number"])
+    if numeric_df.shape[1] < 2:
+        return df
+
+    corr_matrix = numeric_df.corr().abs()
+    upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+    to_drop = [column for column in upper.columns if any(upper[column] > threshold)]
+    if not to_drop:
+        return df
+    return df.drop(columns=to_drop)
 
 
 def encode_features(X: pd.DataFrame) -> pd.DataFrame:
@@ -646,6 +665,13 @@ def main() -> None:
     if settings.log_transform:
         df = apply_log_transform(df)
         st.info("Applied log1p transform to numeric features.")
+
+    if settings.drop_high_correlation:
+        before_cols = set(df.columns)
+        df = drop_highly_correlated_features(df, settings.correlation_threshold)
+        removed = sorted(before_cols - set(df.columns))
+        if removed:
+            st.info(f"Dropped correlated features: {', '.join(removed[:6])}")
 
     if settings.max_rows > 0 and len(df) > settings.max_rows:
         df = df.sample(n=settings.max_rows, random_state=settings.random_state)
