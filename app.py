@@ -52,6 +52,8 @@ class AppSettings:
     max_rows: int
     preview_rows: int
     missing_strategy: str
+    remove_outliers: bool
+    outlier_method: str
 
 
 def render_app_settings() -> AppSettings:
@@ -65,12 +67,16 @@ def render_app_settings() -> AppSettings:
         ["keep", "drop_rows", "median_mode", "mean_mode"],
         index=2,
     )
+    remove_outliers = st.sidebar.checkbox("Remove outliers before training", value=False)
+    outlier_method = st.sidebar.selectbox("Outlier method", ["IQR", "Z-score"], index=0)
     return AppSettings(
         random_state=int(random_state),
         drop_duplicates=drop_duplicates,
         max_rows=int(max_rows),
         preview_rows=int(preview_rows),
         missing_strategy=str(missing_strategy),
+        remove_outliers=remove_outliers,
+        outlier_method=str(outlier_method),
     )
 
 
@@ -156,6 +162,31 @@ def impute_dataframe(df: pd.DataFrame, strategy: str) -> pd.DataFrame:
         imputed[col] = imputed[col].fillna(fill_value)
 
     return imputed
+
+
+def remove_outliers_from_dataframe(df: pd.DataFrame, method: str) -> pd.DataFrame:
+    numeric_df = df.select_dtypes(include=["number"])
+    if numeric_df.empty:
+        return df
+
+    mask = pd.Series(True, index=df.index)
+    for col in numeric_df.columns:
+        series = numeric_df[col].dropna()
+        if series.empty:
+            continue
+        if method == "IQR":
+            q1, q3 = series.quantile([0.25, 0.75])
+            iqr = q3 - q1
+            lower, upper = q1 - 1.5 * iqr, q3 + 1.5 * iqr
+            mask &= df[col].between(lower, upper) | df[col].isna()
+        else:
+            std = series.std()
+            if std == 0:
+                continue
+            z_scores = (df[col] - series.mean()) / std
+            mask &= z_scores.abs() <= 3 | df[col].isna()
+
+    return df.loc[mask].copy()
 
 
 def encode_features(X: pd.DataFrame) -> pd.DataFrame:
@@ -588,6 +619,13 @@ def main() -> None:
         removed = before_rows - len(df)
         if removed > 0:
             st.info(f"Removed {removed} duplicate rows.")
+
+    if settings.remove_outliers:
+        before_rows = len(df)
+        df = remove_outliers_from_dataframe(df, settings.outlier_method)
+        removed = before_rows - len(df)
+        if removed > 0:
+            st.info(f"Removed {removed} outlier rows using {settings.outlier_method}.")
 
     if settings.max_rows > 0 and len(df) > settings.max_rows:
         df = df.sample(n=settings.max_rows, random_state=settings.random_state)
