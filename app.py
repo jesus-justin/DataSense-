@@ -620,7 +620,15 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int, decision_
 
     comparison_df = pd.DataFrame(rows)
     sort_col = "Accuracy" if problem_type == "Classification" else "R2"
-    st.dataframe(comparison_df.sort_values(by=sort_col, ascending=False), use_container_width=True)
+    comparison_df = comparison_df.sort_values(by=sort_col, ascending=False)
+    st.dataframe(comparison_df, use_container_width=True)
+
+    fig, ax = plt.subplots()
+    ax.bar(comparison_df["Model"], comparison_df[sort_col], color="#0f766e")
+    ax.set_ylabel(sort_col)
+    ax.set_title("Model Comparison")
+    plt.xticks(rotation=20, ha="right")
+    st.pyplot(fig)
 
     st.markdown("### Training Summary")
     summary_df = pd.DataFrame(
