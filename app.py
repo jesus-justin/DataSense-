@@ -234,6 +234,13 @@ def drop_highly_correlated_features(df: pd.DataFrame, threshold: float) -> pd.Da
     return df.drop(columns=to_drop)
 
 
+def drop_constant_columns(df: pd.DataFrame) -> pd.DataFrame:
+    constant_columns = [column for column in df.columns if df[column].nunique(dropna=False) <= 1]
+    if not constant_columns:
+        return df
+    return df.drop(columns=constant_columns)
+
+
 def encode_features(X: pd.DataFrame) -> pd.DataFrame:
     X_encoded = X.copy()
     object_cols = X_encoded.select_dtypes(include=["object", "category"]).columns
@@ -785,6 +792,11 @@ def main() -> None:
         return
 
     df = clean_dataframe(df)
+    before_cols = set(df.columns)
+    df = drop_constant_columns(df)
+    removed_constants = sorted(before_cols - set(df.columns))
+    if removed_constants:
+        st.info(f"Dropped constant columns: {', '.join(removed_constants[:6])}")
     df = impute_dataframe(df, settings.missing_strategy)
     if settings.drop_duplicates:
         before_rows = len(df)
