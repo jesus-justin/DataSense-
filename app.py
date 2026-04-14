@@ -200,7 +200,7 @@ def remove_outliers_from_dataframe(df: pd.DataFrame, method: str) -> pd.DataFram
             if std == 0:
                 continue
             z_scores = (df[col] - series.mean()) / std
-            mask &= z_scores.abs() <= 3 | df[col].isna()
+            mask &= (z_scores.abs() <= 3) | df[col].isna()
 
     return df.loc[mask].copy()
 
