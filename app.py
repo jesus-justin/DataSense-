@@ -302,6 +302,16 @@ def recommend_models(problem_type: str) -> List[str]:
     return ["Random Forest", "Linear Regression", "Decision Tree"]
 
 
+def select_feature_columns(df: pd.DataFrame, target: str) -> List[str]:
+    feature_columns = [column for column in df.columns if column != target]
+    selected_features = st.multiselect(
+        "Feature columns to use",
+        feature_columns,
+        default=feature_columns,
+    )
+    return list(selected_features) if selected_features else feature_columns
+
+
 def render_visualizations(df: pd.DataFrame) -> None:
     st.subheader("Visualizations")
     numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
@@ -371,7 +381,8 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
         st.error("Selected target column was not found.")
         return
 
-    X = df.drop(columns=[target])
+    selected_feature_columns = select_feature_columns(df, target)
+    X = df[selected_feature_columns].copy()
     y = df[target]
     render_target_profile(y)
     X_encoded = encode_features(X)
