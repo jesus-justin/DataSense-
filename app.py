@@ -14,7 +14,9 @@ from sklearn.metrics import (
     accuracy_score,
     classification_report,
     confusion_matrix,
+    matthews_corrcoef,
     f1_score,
+    balanced_accuracy_score,
     mean_absolute_error,
     mean_squared_error,
     precision_score,
@@ -467,6 +469,8 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
             st.write("Sample prediction probabilities:")
             st.write(model.predict_proba(X_test)[:5])
         st.write("Accuracy:", accuracy_score(y_test, preds))
+        st.write("Balanced Accuracy:", balanced_accuracy_score(y_test, preds))
+        st.write("Matthews Corrcoef:", matthews_corrcoef(y_test, preds))
         st.write("Precision (weighted):", precision_score(y_test, preds, average="weighted", zero_division=0))
         st.write("Recall (weighted):", recall_score(y_test, preds, average="weighted", zero_division=0))
         st.write("F1 (weighted):", f1_score(y_test, preds, average="weighted", zero_division=0))
