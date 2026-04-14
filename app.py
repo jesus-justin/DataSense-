@@ -659,6 +659,13 @@ def train_unsupervised(df: pd.DataFrame, random_state: int) -> None:
     st.write("Cluster Counts:")
     st.write(df_clustered["cluster"].value_counts())
     st.write("Cluster inertia:", float(kmeans.inertia_))
+    cluster_counts = df_clustered["cluster"].value_counts().sort_index()
+    fig, ax = plt.subplots()
+    cluster_counts.plot(kind="bar", ax=ax, color="#4c8bf5")
+    ax.set_xlabel("Cluster")
+    ax.set_ylabel("Rows")
+    ax.set_title("Cluster Size Distribution")
+    st.pyplot(fig)
 
     centers_df = pd.DataFrame(kmeans.cluster_centers_, columns=features.columns)
     st.write("Cluster centers:")
