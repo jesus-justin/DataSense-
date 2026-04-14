@@ -301,6 +301,18 @@ def render_dataset_profile(df: pd.DataFrame) -> None:
         st.write("Numeric summary:")
         st.dataframe(numeric_df.describe().transpose(), use_container_width=True)
 
+    missing_summary = (
+        pd.DataFrame({
+            "missing_count": df.isna().sum(),
+            "missing_pct": df.isna().mean() * 100,
+        })
+        .query("missing_count > 0")
+        .sort_values(by="missing_pct", ascending=False)
+    )
+    if not missing_summary.empty:
+        st.write("Columns with missing values:")
+        st.dataframe(missing_summary, use_container_width=True)
+
 
 def render_target_profile(series: pd.Series) -> None:
     st.subheader("Target Profile")
