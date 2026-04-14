@@ -54,6 +54,7 @@ class AppSettings:
     missing_strategy: str
     remove_outliers: bool
     outlier_method: str
+    log_transform: bool
 
 
 def render_app_settings() -> AppSettings:
@@ -69,6 +70,7 @@ def render_app_settings() -> AppSettings:
     )
     remove_outliers = st.sidebar.checkbox("Remove outliers before training", value=False)
     outlier_method = st.sidebar.selectbox("Outlier method", ["IQR", "Z-score"], index=0)
+    log_transform = st.sidebar.checkbox("Apply log1p transform to numeric features", value=False)
     return AppSettings(
         random_state=int(random_state),
         drop_duplicates=drop_duplicates,
@@ -77,6 +79,7 @@ def render_app_settings() -> AppSettings:
         missing_strategy=str(missing_strategy),
         remove_outliers=remove_outliers,
         outlier_method=str(outlier_method),
+        log_transform=log_transform,
     )
 
 
@@ -187,6 +190,19 @@ def remove_outliers_from_dataframe(df: pd.DataFrame, method: str) -> pd.DataFram
             mask &= z_scores.abs() <= 3 | df[col].isna()
 
     return df.loc[mask].copy()
+
+
+def apply_log_transform(df: pd.DataFrame) -> pd.DataFrame:
+    transformed = df.copy()
+    numeric_cols = transformed.select_dtypes(include=["number"]).columns
+    for col in numeric_cols:
+        series = transformed[col]
+        if series.min() < 0:
+            shifted = series - series.min() + 1
+            transformed[col] = np.log1p(shifted)
+        else:
+            transformed[col] = np.log1p(series)
+    return transformed
 
 
 def encode_features(X: pd.DataFrame) -> pd.DataFrame:
@@ -626,6 +642,10 @@ def main() -> None:
         removed = before_rows - len(df)
         if removed > 0:
             st.info(f"Removed {removed} outlier rows using {settings.outlier_method}.")
+
+    if settings.log_transform:
+        df = apply_log_transform(df)
+        st.info("Applied log1p transform to numeric features.")
 
     if settings.max_rows > 0 and len(df) > settings.max_rows:
         df = df.sample(n=settings.max_rows, random_state=settings.random_state)
