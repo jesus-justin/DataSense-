@@ -62,6 +62,7 @@ class AppSettings:
     drop_high_correlation: bool
     correlation_threshold: float
     decision_threshold: float
+    imbalance_threshold: float
 
 
 def render_app_settings() -> AppSettings:
@@ -81,6 +82,7 @@ def render_app_settings() -> AppSettings:
     drop_high_correlation = st.sidebar.checkbox("Drop highly correlated numeric features", value=False)
     correlation_threshold = st.sidebar.slider("Correlation threshold", 0.5, 0.99, 0.9, 0.01)
     decision_threshold = st.sidebar.slider("Binary decision threshold", 0.1, 0.9, 0.5, 0.05)
+    imbalance_threshold = st.sidebar.slider("Imbalance warning threshold", 0.5, 0.95, 0.8, 0.01)
     return AppSettings(
         random_state=int(random_state),
         drop_duplicates=drop_duplicates,
@@ -93,6 +95,7 @@ def render_app_settings() -> AppSettings:
         drop_high_correlation=drop_high_correlation,
         correlation_threshold=float(correlation_threshold),
         decision_threshold=float(decision_threshold),
+        imbalance_threshold=float(imbalance_threshold),
     )
 
 
@@ -419,8 +422,10 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int, decision_
         class_dist.columns = ["class", "ratio"]
         st.write("Class distribution:")
         st.dataframe(class_dist, use_container_width=True)
-        if not class_dist.empty and class_dist["ratio"].max() > 0.8:
-            st.warning("Class imbalance detected (majority class > 80%). Consider resampling.")
+        if not class_dist.empty and class_dist["ratio"].max() > settings.imbalance_threshold:
+            st.warning(
+                f"Class imbalance detected (majority class > {settings.imbalance_threshold:.0%}). Consider resampling."
+            )
 
     normalize_confusion = False
     if problem_type == "Classification":
