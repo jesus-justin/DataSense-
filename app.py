@@ -389,6 +389,10 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
         if not class_dist.empty and class_dist["ratio"].max() > 0.8:
             st.warning("Class imbalance detected (majority class > 80%). Consider resampling.")
 
+    normalize_confusion = False
+    if problem_type == "Classification":
+        normalize_confusion = st.checkbox("Normalize confusion matrix", value=False)
+
     test_size = st.slider("Train-Test Split (Test Size)", 0.1, 0.5, 0.2, 0.05)
     run_cv = st.checkbox("Run 5-fold cross-validation on selected model", value=False)
     use_scaling = st.checkbox(
@@ -467,9 +471,9 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
         st.write("Recall (weighted):", recall_score(y_test, preds, average="weighted", zero_division=0))
         st.write("F1 (weighted):", f1_score(y_test, preds, average="weighted", zero_division=0))
         st.write("Confusion Matrix:")
-        cm = confusion_matrix(y_test, preds)
+        cm = confusion_matrix(y_test, preds, normalize="true" if normalize_confusion else None)
         fig, ax = plt.subplots()
-        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
+        sns.heatmap(cm, annot=True, fmt=".2f" if normalize_confusion else "d", cmap="Blues", ax=ax)
         ax.set_xlabel("Predicted")
         ax.set_ylabel("Actual")
         st.pyplot(fig)
