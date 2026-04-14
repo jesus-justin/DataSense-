@@ -627,6 +627,12 @@ def train_unsupervised(df: pd.DataFrame, random_state: int) -> None:
         pca = PCA(n_components=pca_components)
         features = pd.DataFrame(pca.fit_transform(features), index=features.index)
         st.write("Explained variance ratio:", pca.explained_variance_ratio_)
+        fig, ax = plt.subplots()
+        ax.bar(range(1, len(pca.explained_variance_ratio_) + 1), pca.explained_variance_ratio_)
+        ax.set_xlabel("Principal Component")
+        ax.set_ylabel("Explained Variance Ratio")
+        ax.set_title("PCA Variance Breakdown")
+        st.pyplot(fig)
 
     show_elbow = st.checkbox("Show elbow analysis", value=False)
     if show_elbow:
