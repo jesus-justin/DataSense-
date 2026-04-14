@@ -286,6 +286,11 @@ def render_dataset_profile(df: pd.DataFrame) -> None:
     c3.metric("Duplicate Rows", duplicate_rows)
     c4.metric("Total Missing", missing_total)
 
+    numeric_df = df.select_dtypes(include=["number"])
+    if not numeric_df.empty:
+        st.write("Numeric summary:")
+        st.dataframe(numeric_df.describe().transpose(), use_container_width=True)
+
 
 def render_target_profile(series: pd.Series) -> None:
     st.subheader("Target Profile")
