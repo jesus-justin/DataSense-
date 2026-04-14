@@ -18,6 +18,7 @@ from sklearn.metrics import (
     f1_score,
     balanced_accuracy_score,
     mean_absolute_error,
+    mean_absolute_percentage_error,
     mean_squared_error,
     precision_score,
     r2_score,
@@ -506,9 +507,11 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
         st.write("Sample predictions:")
         st.write(predictions[:5])
         st.write("MAE:", mean_absolute_error(y_test, predictions))
+        st.write("MAPE:", mean_absolute_percentage_error(y_test, predictions))
         st.write("MSE:", mean_squared_error(y_test, predictions))
         st.write("R2 Score:", r2_score(y_test, predictions))
         residuals = y_test - predictions
+        st.write("Residual std dev:", float(np.std(residuals)))
         fig, ax = plt.subplots()
         sns.scatterplot(x=predictions, y=residuals, ax=ax)
         ax.axhline(0, color="red", linestyle="--")
