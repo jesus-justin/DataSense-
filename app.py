@@ -50,6 +50,7 @@ class AppSettings:
     random_state: int
     drop_duplicates: bool
     max_rows: int
+    preview_rows: int
 
 
 def render_app_settings() -> AppSettings:
@@ -57,7 +58,13 @@ def render_app_settings() -> AppSettings:
     random_state = st.sidebar.number_input("Random seed", min_value=0, max_value=9999, value=42)
     drop_duplicates = st.sidebar.checkbox("Drop duplicate rows", value=False)
     max_rows = st.sidebar.slider("Max rows to use (0 = all)", min_value=0, max_value=50000, value=0, step=500)
-    return AppSettings(random_state=int(random_state), drop_duplicates=drop_duplicates, max_rows=int(max_rows))
+    preview_rows = st.sidebar.slider("Preview rows", min_value=3, max_value=25, value=5)
+    return AppSettings(
+        random_state=int(random_state),
+        drop_duplicates=drop_duplicates,
+        max_rows=int(max_rows),
+        preview_rows=int(preview_rows),
+    )
 
 
 def detect_learning_type(df: pd.DataFrame) -> DetectionResult:
@@ -152,9 +159,9 @@ def show_banner(learning_type: str, reason: str) -> None:
     )
 
 
-def render_dataset_overview(df: pd.DataFrame) -> None:
+def render_dataset_overview(df: pd.DataFrame, preview_rows: int) -> None:
     st.subheader("Dataset Overview")
-    st.write(df.head())
+    st.write(df.head(preview_rows))
     st.write("Shape:", df.shape)
     st.write("Duplicate rows:", int(df.duplicated().sum()))
     st.write("Data types:")
@@ -562,7 +569,7 @@ def main() -> None:
     detection = detect_learning_type(df)
     show_banner(detection.learning_type, detection.reason)
 
-    render_dataset_overview(df)
+    render_dataset_overview(df, settings.preview_rows)
     render_dataset_profile(df)
 
     if detection.learning_type == "Supervised Learning":
