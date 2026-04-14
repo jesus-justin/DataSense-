@@ -293,6 +293,12 @@ def render_target_profile(series: pd.Series) -> None:
         st.write(series.value_counts().head(10))
 
 
+def recommend_models(problem_type: str) -> List[str]:
+    if problem_type == "Classification":
+        return ["Random Forest", "Logistic Regression", "Decision Tree"]
+    return ["Random Forest", "Linear Regression", "Decision Tree"]
+
+
 def render_visualizations(df: pd.DataFrame) -> None:
     st.subheader("Visualizations")
     numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
@@ -421,6 +427,8 @@ def train_supervised(df: pd.DataFrame, target: str, random_state: int) -> None:
             "Decision Tree": DecisionTreeRegressor(random_state=random_state),
             "Random Forest": RandomForestRegressor(random_state=random_state),
         }
+
+    st.info(f"Recommended models: {', '.join(recommend_models(problem_type))}")
 
     model_name = st.selectbox("Choose a model", list(model_options.keys()))
     model = model_options[model_name]
